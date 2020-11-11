@@ -34,8 +34,42 @@ test_linked_list(void) {
     printf("\033[40;32;1mlinkedlist's testing pass \033[0m\n");
 }
 
+void test_binary_tree(void) {
+    int array[] = {10, 5, 15, 3, 9, 20, 18, 6, 12, 16, 7, 8};
+    struct TreeNode *root = NULL;
+    struct TreeNode *p = NULL;
+    int i, min, max;
+    min = max = array[0];
+    for (i = 0; i < sizeof(array) / sizeof(array[0]); i++) {
+        root = tree_insert(root, array[i]);
+        if (array[i] > max) {
+            max = array[i];
+        }
+        if (array[i] < min) {
+            min = array[i];
+        }
+    }
+    tree_print_in_order(root);
+    printf("\n");
+    p = root;
+    assert(p->val == array[0]);
+    while (NULL != p->left) {
+        p = p->left;
+    }
+    assert(p->val == min);
+
+    for (i = 0; i+1 < sizeof(array) / sizeof(array[0]); i++) {
+        root = tree_delete(root, array[i]);
+    }
+    tree_print_in_order(root);
+    printf("\n");
+    assert(root->val == array[i]);
+    printf("\033[40;32;1mbinary_tree's testing pass \033[0m\n");
+}
+
 int
 main(void) {
     test_linked_list();
+    test_binary_tree();
     return 0;
 }

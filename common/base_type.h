@@ -22,5 +22,9 @@ void linked_list_print(const struct ListNode *head);
 /*-----------------------------------Linked List --------------------------*/
 
 /*----------------------------binary search tree --------------------------*/
+void tree_print_in_order(struct TreeNode *root);
+struct TreeNode *tree_delete(struct TreeNode *root, int val);
+struct TreeNode *tree_insert(struct TreeNode *root, int val);
+struct TreeNode *tree_destroy(struct TreeNode *root);
 /*----------------------------binary search tree --------------------------*/
 #endif

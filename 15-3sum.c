@@ -6,17 +6,13 @@ int cmp_int(const void *left, const void *right) {
     return *(const int *)left - *(const int *)right;
 }
 
+static int capacity = 8;
 int **append_result(int **pp, int *size, int a, int b, int c) {
-    int i, *p;
-    /*
-    for (i = 0; i < *size; i++) {
-        p = pp[i];
-        if (p[0] == a && p[1] == b && p[2] == c) {
-            return pp;
-        }
+    int *p;
+    if (*size >= capacity) {
+        capacity *= 2;
+        pp = (int **)realloc(pp, capacity * sizeof(int *));
     }
-    */
-    pp = (int **)realloc(pp, (*size+1) * sizeof(int *));
     p  = (int *)malloc(3 * sizeof(int));
     p[0] = a; p[1] = b; p[2] = c;
     pp[*size] = p;
@@ -28,12 +24,14 @@ int** threeSum(int* nums, int numsSize, int* returnSize, int** returnColumnSizes
     int i, j, k, sum, count, *p;
     int **pp = NULL;
     count = 0;
+    capacity = 8;
+    pp = (int **)realloc(pp, capacity * sizeof(int *));
     qsort(nums, numsSize, sizeof(int), cmp_int);
     for (i = 0; i < numsSize; i++) {
         j   = i + 1;
         k   = numsSize - 1;
         sum = 0 - nums[i];
-        if (nums[i] > 0) {
+        if (nums[i] > 0 || nums[k] < 0) {
             break;
         }
         while (j < k) {
@@ -73,6 +71,7 @@ int** threeSum(int* nums, int numsSize, int* returnSize, int** returnColumnSizes
 int main(int argc, char *argv[]) {
     int *column_size = NULL;
     int count = 0;
+    int res_count = 0;
     int nums[4096];
     int **pp;
     FILE *fp;
@@ -93,6 +92,6 @@ int main(int argc, char *argv[]) {
     fclose(fp);
 
 
-    pp = threeSum(nums, 12, &count, &column_size);
+    pp = threeSum(nums, count, &res_count, &column_size);
     return 0;
 }

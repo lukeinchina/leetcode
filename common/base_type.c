@@ -60,3 +60,67 @@ void linked_list_print(const struct ListNode *head) {
     }
     return;
 }
+
+/*----------------------binary tree -------------------------*/
+struct TreeNode *
+tree_insert(struct TreeNode *root, int val) {
+    if (NULL == root) {
+        root = (struct TreeNode *)calloc(1, sizeof(struct TreeNode));
+        root->val = val;
+    }else if (root->val > val) {
+        root->left = tree_insert(root->left, val);
+    } else {
+        root->right = tree_insert(root->right, val);
+    }
+    return root;
+}
+
+struct TreeNode *
+tree_delete(struct TreeNode *root, int val) {
+    if (NULL == root) {
+        return NULL;
+    }else if (root->val > val) {
+        root->left = tree_delete(root->left, val);
+    } else if (root->val < val){
+        root->right = tree_delete(root->right, val);
+    } else {
+        struct TreeNode *p = root;
+        if (NULL == root->left) {
+            root = root->right;
+            free(p);
+        } else if (NULL == root->right) {
+            root = root->left;
+            free(p);
+        } else {
+            /* 右边最小值替换 */
+            root = root->right;
+            while (NULL != root->left) {
+                root = root->left;
+            }
+            p->val = root->val;
+
+            p->right = tree_delete(p->right, root->val);
+            root = p;
+        }
+    }
+    return root;
+}
+
+void tree_print_in_order(struct TreeNode *root) {
+    if (NULL == root) {
+        return;
+    }
+    tree_print_in_order(root->left);
+    printf("%d\t", root->val);
+    tree_print_in_order(root->right);
+    return;
+}
+
+struct TreeNode *tree_destroy(struct TreeNode *root) {
+    if (NULL != root) {
+        root->left = tree_destroy(root->left);
+        root->right = tree_destroy(root->right);
+        free(root);
+    }
+    return NULL;
+}
