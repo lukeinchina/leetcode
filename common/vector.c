@@ -22,9 +22,8 @@ int vector_append(struct Vector *v, int val) {
         vector_init(v);
     } else if (v->size == v->capacity) {
         v->capacity *= 2;
-        v->arr = (int *)realloc(v->arr, sizeof(int) * v->size);
+        v->arr = (int *)realloc(v->arr, sizeof(int) * v->capacity);
     }
-    v->arr[v->size] = val;
-    v->size += 1;
+    v->arr[v->size++] = val;
     return 0;
 }
