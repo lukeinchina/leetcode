@@ -3,28 +3,36 @@
 #include <stdlib.h>
 
 int longestValidParentheses(char * s){
-    char *bottom = (char *)malloc(strlen(s)+1);
-    char *top = bottom;
-    int max = 0;
-    int len = 0;
-    for (; '\0' != *s; s++) {
-        if ('(' == *s) {
-            *top++ = *s;
-            continue;
-        }
-        /* */
-        if (top > bottom) {
-            top--;
-            len += 2;
+    const char *p = s;
+    int max, left, right;
+    max = left = right = 0;
+    for (p = s ; '\0' != *p; p++) {
+        if ('(' == *p) {
+            left++;
         } else {
-            len = 0;
+            right++;
         }
-        if (len > max) {
-            max = len;
+        if (left == right) {
+            max = max > 2*left ? max : 2*left;
+        } else if (right > left) {
+            right = left = 0;
+        }
+    }
+    left = right = 0;
+    /* skip '\0' */
+    for (--p; p >= s; p--) {
+        if ('(' == *p) {
+            left++;
+        } else {
+            right++;
+        }
+        if (left == right) {
+            max = max > 2*left ? max : 2*left;
+        } else if (right < left) {
+            right = left = 0;
         }
     }
 
-    free(bottom);
     return max;
 }
 
