@@ -1,47 +1,57 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "common/base_type.h"
-/**
- * Definition for a binary tree node.
-struct TreeNode {
-    int val;
-    struct TreeNode *left;
-    struct TreeNode *right;
-};
-*/
 
-int* inorderTraversal(struct TreeNode* root, int* returnSize){
-    int i, total;
-    struct TreeNode **stack = (struct TreeNode **)malloc(sizeof(struct TreeNode *) * 100);
-    int *array = (int *)malloc(sizeof(int) * 100);
-    i = total = 0;
-    stack[i++] = root;
-    while (i > 0) {
-        while (root->left != NULL) {
-            root = root->left;
-            stack[i++] = root;
-        }
-        root = stack[--i];
-        array[total++] = root->val;
-        printf("%d\n", root->val);
-        if (NULL != root->right) {
-            root = root->right;
-            stack[i++] = root;
-        }
+#include "common/base_type.h"
+
+void print_array(const int *nums, int size) {
+    int i;
+    for (i = 0; i < size; i++) {
+        printf("%d%c", nums[i], i+1 == size ? '\n' : '\t');
     }
-    free(stack);
-    return array;
 }
 
-int main(void) {
-    int array[] = {10, 5, 15, 3, 9, 20, 18, 6, 12, 16, 7, 8};
+int tree_count(const struct TreeNode *root) {
+    if (NULL == root) {
+        return 0;
+    } else {
+        return 1 + tree_count(root->left) + tree_count(root->right);
+    }
+}
+
+void get_in_order(const struct TreeNode *root, int *nums, int *index) {
+    if (NULL == root) {
+        return;
+    }
+    get_in_order(root->left, nums, index);
+    nums[*index] = root->val;
+    *index += 1;
+    get_in_order(root->right, nums, index);
+    return ;
+}
+int* 
+inorderTraversal(struct TreeNode* root, int* returnSize){
+    int *nums, index = 0;
+    *returnSize = tree_count(root);
+    if (0 == *returnSize) {
+        return NULL;
+    }
+    nums = (int *)malloc(sizeof(int) * *returnSize);
+    get_in_order(root, nums, &index);
+    return nums;
+}
+
+
+int
+main(void) {
+    size_t i;
+    int size, *p, nums[] = {2, 3, 1, 4};
     struct TreeNode *root = NULL;
-    int i;
-    for (i = 0; i < sizeof(array) / sizeof(array[0]); i++) {
-        root = tree_insert(root, array[i]);
+    for (i = 0; i < sizeof(nums)/sizeof(nums[0]); i++) {
+        root = tree_insert(root, nums[i]);
     }
     tree_print_in_order(root);
     printf("\n");
-    inorderTraversal(root, NULL);
+    p = inorderTraversal(root, &size);
+    print_array(p, size);
     return 0;
 }

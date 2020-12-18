@@ -51,7 +51,7 @@ linked_list_insert_tail(struct ListNode *head, int val) {
 /* insert in order */
 struct ListNode *
 linked_list_insert(struct ListNode *head, int val) {
-    return head;
+    return linked_list_insert_head(head, val);
 }
 
 void linked_list_print(const struct ListNode *head) {
