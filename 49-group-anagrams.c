@@ -130,7 +130,7 @@ char *** groupAnagrams(char ** strs, int strsSize, int* returnSize, int** return
 int
 main(void) {
     // char *strs[] = { "eat","tea","tan","ate","nat","bat" };
-    char *strs[] = { "",""};
+    char *strs[] = {"",""};
     int i,j;
     int size;
     int *colsizes;

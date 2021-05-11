@@ -26,7 +26,7 @@ int rob(int* nums, int numsSize){
 int
 main(void) {
 //int nums[] = {2,7,9,3,1};
-    int nums[] = {1,2,3,1};
+    int nums[] = {3,1,3,100};
     printf("%d\n", rob(nums, sizeof(nums) / sizeof(nums[0])));
     return 0;
 }

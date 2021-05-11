@@ -47,11 +47,11 @@ int dfs(const char *begin, const char *end,
         if (visited[i]) {
             continue;
         }
-        d = diff(end, words[i]);
+        d = diff(begin, words[i]);
         if (d < 2) {
             visited[i] = 1;
             stack[top] = i;
-            dfs(begin, words[i], words, size, visited, stack, top+1, max);
+            dfs(words[i], end, words, size, visited, stack, top+1, max);
             visited[i] = 0;
         }
     }
@@ -109,51 +109,12 @@ int ladderLength(char * beginWord, char * endWord, char ** wordList,
     }
     visited = (int *)calloc(wordListSize, sizeof(int));
     stack   = (int *)calloc(wordListSize, sizeof(int));
-    visited[pos] = 1;
+    // visited[pos] = 1;
     stack[0]     = pos;
-    dfs(beginWord, endWord, wordList, wordListSize, visited, stack, 1, &distance);
+    dfs(beginWord, endWord, wordList, wordListSize, visited, stack, 0, &distance);
     free(visited);
     free(stack);
-    return (distance < 65536 ? distance : 0);
-}
-
-int ladderLength2(char * beginWord, char * endWord, char ** wordList, 
-        int wordListSize){
-    int distance = 16;
-    int i, j, d, top, pos;
-    int *visited, *stack;
-    struct AdjTable head = {NULL, NULL, 0};
-    /* 目标不在，直接返回 */
-    if ((pos = find(wordList, wordListSize, endWord)) < 0) {
-        return 0;
-    }
-    adj_table_init(&head, wordListSize);
-    visited = (int *)calloc(wordListSize, sizeof(int));
-    stack   = (int *)calloc(wordListSize, sizeof(int));
-
-    for (i = 0; i < wordListSize; i++) {
-        top = 0;
-        for (j = 0; j < wordListSize; j++) {
-            if (i == j) {
-                continue;
-            }
-            /* i->j 之间有一条边. */
-            d = diff(wordList[i], wordList[j]);
-            if (1 == d) {
-                stack[top++] = j;
-            }
-        }
-        if (top > 0) {
-            adj_table_add(&head, i, stack, top);
-        }
-    }
-
-    visited[pos] = 1;
-    stack[0]     = pos;
-    // dfs(beginWord, endWord, wordList, wordListSize, visited, stack, 1, &distance);
-    free(visited);
-    free(stack);
-    return (distance < 16 ? distance : 0);
+    return (distance < 65536 ? distance+1 : 0);
 }
 
 /* ------------------------------------------------------------*/
@@ -195,7 +156,8 @@ read_test_case(const char *path, int *count) {
 int
 main(int argc, char *argv[]) {
     int size = 0;
-    char **strs = read_test_case("./case.txt", &size);
+//    char **strs = read_test_case("./case.txt", &size);
+    char *strs[] = {"hot","dot","dog","lot","log","cog"};
     if (argc < 3) {
         printf("usage:%s begin  end\n", argv[0]);
         return -1;
@@ -203,6 +165,5 @@ main(int argc, char *argv[]) {
 
     printf("input count:%d\n", size);
     printf("min path: %d\n", ladderLength(argv[1], argv[2], strs, sizeof(strs)/sizeof(strs[0])));
-    // printf("min path: %d\n", ladderLength2(argv[1], argv[2], strs, sizeof(strs)/sizeof(strs[0])));
     return 0;
 }
