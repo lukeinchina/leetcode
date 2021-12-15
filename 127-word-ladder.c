@@ -3,17 +3,19 @@
 #include <string.h>
 #include <assert.h>
 #include <ctype.h>
+#include <limits.h>
 
-/*---------------------原始版本DFS --------------------------*/
-int find(char **words, int size, const char *word) {
-    int i;
-    for (i = 0; i < size; i++) {
-        if (0 == strcmp(words[i], word)) {
-            return i;
-        }
-    }
-    return -1;
-}
+#include "common/queue.h"
+
+struct ListNode {
+    int val;
+    struct ListNode *next;
+};
+
+struct AdjTable {
+    struct ListNode *table;
+    int size;
+};
 
 int diff(const char *s, const char *t) {
     int d = 0;
@@ -29,92 +31,157 @@ void print_path(char **words, int size, int *stack, int top) {
     }
 }
 
-int dfs(const char *begin, const char *end, 
-        char **words, int size,
-        int *visited, int *stack, int top, int *max) {
-    int i, d;
-    /* 剪枝 */
-    if (top >= *max) {
-        return 0;
-    }
-    if ((d = diff(begin, end)) == 1) {
-        print_path(words, size, stack, top);
-        top += 1;
-        *max = (*max > top ? top : *max);
-        return 0;
-    }
-    for (i = 0; i < size; i++) {
-        if (visited[i]) {
-            continue;
-        }
-        d = diff(begin, words[i]);
-        if (d < 2) {
-            visited[i] = 1;
-            stack[top] = i;
-            dfs(words[i], end, words, size, visited, stack, top+1, max);
-            visited[i] = 0;
-        }
-    }
-    return 0;
-}
-/*------------------------优化版----------------------------------*/
-
-struct AdjTable {
-    int **table;
-    int *cols;
-    int size;
-};
 
 void adj_table_init(struct AdjTable *head, int size) {
     head->size  = size;
-    head->cols  = (int *)calloc(size, sizeof(int));
-    head->table = (int **)calloc(size, sizeof(int *));
+    head->table = (struct ListNode *)calloc(size, sizeof(struct ListNode));
     return ;
 }
 
 void adj_table_destroy(struct AdjTable *head) {
     int i;
+    struct ListNode *p;
     for (i = 0; i < head->size; i++) {
-        if (NULL != head->table[i]) {
-            free(head->table[i]);
+        for (p = head->table[i].next; NULL != p; p = head->table[i].next) {
+            head->table[i].next = p->next;
+            free(p);
         }
     }
-    free(head->cols);
+    free(head->table);
 
     head->table = NULL;
-    head->cols  = NULL;
     head->size  = 0;
 }
 
 int 
-adj_table_add(struct AdjTable *head, int begin, int *ends, int size) {
-    assert(begin < head->size);
-    assert(NULL == head->table[begin]);
-
-    head->table[begin] = (int *)malloc(size * sizeof(*ends));
-    memcpy(head->table[begin], ends, sizeof(*ends) * size);
-    head->cols[begin] = size;
+adj_table_add(struct AdjTable *head, int begin, int end) {
+    struct ListNode *p      = (struct ListNode *)malloc(sizeof(struct ListNode));
+    p->val                  = end;
+    p->next                 = head->table[begin].next;
+    head->table[begin].next = p;
     return 0;
+}
+
+void dfs(struct AdjTable *head, int v, int end, 
+        int visited[], int stack[], int top, int *min) {
+    int i;
+    struct ListNode *p = NULL;
+    if (top >= *min) {
+        return ;
+    }
+    visited[v]   = 1;
+    stack[top++] = v;
+    if (end == v) {
+        stack[top] = v;
+        *min = (top < *min ? top : *min);
+        for (i = 0; i < top; i++) {
+            printf("%d%c", stack[i], i+1 == top ? '\n' : '-');
+        }
+        return;
+    }
+    for (p = head->table[v].next; NULL != p; p = p->next) {
+        if (visited[p->val]) {
+            continue;
+        }
+        dfs(head, p->val, end, visited, stack, top, min);
+    }
+    visited[v] = 0;
+}
+
+int **
+create_matrix(int row, int col) {
+    int i;
+    int **matrix = (int **)malloc(sizeof(int *) * row);
+    for (i = 0; i < row; i++) {
+        matrix[i] = (int *)calloc(col, sizeof(int));
+    }
+    return matrix;
+}
+
+void *
+destory_matrix(int **matrix, int row) {
+    int i = 0;
+    for (i = 0; i < row; i++) {
+        free(matrix[i]);
+    }
+    free(matrix);
+    return NULL;
+}
+
+int bfs(int **matrix, int size, int begin, int end) {
+    int min = 1 << 16;
+    int i, v, level = 0;
+    int *visited = (int *)calloc(size, sizeof(int));
+    struct Queue *queue = create_queue();
+    struct Queue *next  = create_queue();
+    struct Queue *temp  = NULL;
+
+    queue_push(queue, begin);
+    visited[begin] = 1;
+
+    while (!queue_empty(queue)) {
+        level++;
+        while (!queue_empty(queue)) {
+            queue_pop(queue, &v);
+            if (v == end) {
+                min = level;
+                goto EXIT;
+            }
+            for (i = 0; i < size; i++) {
+                if (matrix[v][i] && !visited[i]) {
+                    queue_push(next, i);
+                    visited[i] = 1;
+                }
+            }
+        }
+        temp  = queue;
+        queue = next;
+        next  = temp;
+    }
+EXIT:
+    queue = free_queue(queue);
+    next  = free_queue(next);
+    free(visited);
+    return (min < (1<<16) ? min : 0);
 }
 
 /*-----------------------------------------------------------------*/
 int ladderLength(char * beginWord, char * endWord, char ** wordList, 
         int wordListSize){
-    int pos, distance = 65536;
-    int *visited, *stack;
+    int i, j, begin, end, min;
+    int **matrix = create_matrix(wordListSize+1, wordListSize+1);
+    end     = -1; 
+    begin   = wordListSize;
 
-    /* 目标不在，直接返回 */
-    if ((pos = find(wordList, wordListSize, endWord)) < 0) {
-        return 0;
+    for (i = 0; i < wordListSize; i++) {
+        if (0 == strcmp(beginWord, wordList[i])) {
+            begin = i;
+        }
+        if (0 == strcmp(wordList[i], endWord)) {
+            end = i;
+        }
+        for (j = i+1; j < wordListSize; j++) {
+            if (1 != diff(wordList[i], wordList[j])) {
+                continue;
+            }
+            matrix[i][j] = 1;
+            matrix[j][i] = 1;
+        }
     }
-    visited = (int *)calloc(wordListSize, sizeof(int));
-    stack   = (int *)calloc(wordListSize, sizeof(int));
-    // visited[pos] = 1;
-    stack[0]     = pos;
-    dfs(beginWord, endWord, wordList, wordListSize, visited, stack, 0, &distance);
-    free(visited);
-    free(stack);
-    return (distance < 65536 ? distance+1 : 0);
+
+    if (wordListSize == begin) {
+        for (i = 0; i < wordListSize; i++) {
+            if (1 != diff(beginWord, wordList[i])) {
+                continue;
+            }
+            matrix[begin][i] = 1;
+            matrix[i][begin] = 1;
+
+        }
+    }
+    min = bfs(matrix, wordListSize+1, begin, end);
+    destory_matrix(matrix, wordListSize+1);
+    return min;
 }
 
 /* ------------------------------------------------------------*/
@@ -156,14 +223,15 @@ read_test_case(const char *path, int *count) {
 int
 main(int argc, char *argv[]) {
     int size = 0;
-//    char **strs = read_test_case("./case.txt", &size);
-    char *strs[] = {"hot","dot","dog","lot","log","cog"};
+    char **strs = read_test_case("./case.txt", &size);
+    // char *strs[] = {"hot","dot","dog","lot","log","cog"};
     if (argc < 3) {
         printf("usage:%s begin  end\n", argv[0]);
         return -1;
     }
 
     printf("input count:%d\n", size);
-    printf("min path: %d\n", ladderLength(argv[1], argv[2], strs, sizeof(strs)/sizeof(strs[0])));
+    // printf("min path: %d\n", ladderLength(argv[1], argv[2], strs, sizeof(strs)/sizeof(strs[0])));
+    printf("min path: %d\n", ladderLength(argv[1], argv[2], strs, size));
     return 0;
 }

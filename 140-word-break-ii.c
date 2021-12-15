@@ -3,186 +3,114 @@
 #include <string.h>
 #include <assert.h>
 
-/*------------------------ result store ---------------------------*/
-struct RstHead {
-    char **pp;
+struct WordDict {
+    char **words;
+    int  *lens;
+    int   count;
+};
+
+struct BreakWords {
+    char **words;
+    int count;
     int size;
-    int capacity;
 };
 
-void result_init(struct RstHead *head) {
-    head->capacity = 2;
-    head->size     = 0;
-    head->pp       = (char **)malloc(sizeof(char *) * head->capacity);
+void result_init(struct BreakWords *head) {
+    head->size  = 2;
+    head->count = 0;
+    head->words = (char **)malloc(sizeof(char *) * head->size);
 }
 
-void result_append(char **words, int size, int *lens, int *stack, int top, 
-        struct RstHead *head) {
-    int i, offset, total = 1;
-    char *p   = NULL;
-    if (0 == head->capacity) {
-        result_init(head);
-    } else if (head->size == head->capacity) {
-        head->capacity *= 2;
-        head->pp = (char **)realloc(head->pp, sizeof(char *) * head->capacity);
-    }
-
-    /* 计算需要buffer size */
-    total = 1; /* 存储结束字符 */
-    for (i = 0; i < top; i++) {
-        assert(stack[i] < size);
-        total += lens[stack[i]];
-    }
-    total += (top - 1); /* 需要空格数目 */
-
-    /* 拼装最终字符串 */
-    p = (char *)malloc(total);
-    for (offset = i = 0; i < top; i++) {
-        strncpy(p+offset, words[stack[i]], lens[stack[i]]);
-        offset += lens[stack[i]];
-        p[offset] = ' ';
-        offset += (i+1 == top) ? 0 : 1;
-    }
-    p[offset] = '\0';
-
-    head->pp[head->size] = p;
-    head->size += 1;
-
-}
-/*------------------------ result store ---------------------------*/
-
-/*-------------------------- tire -------------------------*/
-#define SIZE 26
-struct TireNode {
-    char   c;
-    char   fin;
-    int    id;
-    struct TireNode *nexts[SIZE];
-};
-
-int
-tire_insert(struct TireNode *root, const char *str) {
-    static int id = 0;
-
-    for (; '\0' != *str; str++) {
-        if (NULL == root->nexts[*str - 'a']) {
-            root->nexts[*str - 'a'] = (struct TireNode *)calloc(1, sizeof(struct TireNode));
-        }
-        root    = root->nexts[*str - 'a'];
-        root->c = *str;
-    }
-    root->fin = 1; 
-    root->id  = id++; /* 按顺序自动生成单词id */
-    return 1;
-}
-
-struct TireNode *
-tire_create(void) {
-    return (struct TireNode *)calloc(1, sizeof(struct TireNode));
-}
-
-struct TireNode *
-tire_free(struct TireNode *root) {
+struct WordDict *
+create_dict(struct WordDict *dict, char **words, int word_count) {
     int i;
-    if (NULL == root) {
-        return NULL;
+    dict->words = words;
+    dict->lens  = (int *)malloc(sizeof(int) * word_count);
+    dict->count = word_count;
+    for (i = 0; i < word_count; i++) {
+        dict->lens[i] = strlen(words[i]);
     }
-    for (i = 0; i < SIZE; i++) {
-        if (NULL != root->nexts[i]) {
-            root->nexts[i] = tire_free(root->nexts[i]);
-        }
-    }
-    free(root);
-    return NULL;
+    return dict;
 }
 
-/*
- *@brief:匹配到tire tire中可能存在的单词。
- *       返回匹配到单词的数目，匹配到的单词的存在matches返回。
- */
-int tire_match(const struct TireNode *root, const char *str,
-        int *matches) {
-    int count     = 0;
-    for (; '\0' != *str; str++) {
-        if (NULL == (root = root->nexts[*str - 'a'])) {
-            break;
-        }
-
-        /* 匹配到一个word */
-        if (root->fin) {
-            matches[count++] = root->id;
-        }
-    }
-    return count;
+struct WordDict *
+destroy_dict(struct WordDict *dict) {
+    free(dict->lens);
+    dict->words = NULL;
+    dict->lens  = NULL;
+    dict->count = 0;
+    return dict;
 }
 
-int 
-tire_has(const struct TireNode *root, const char *str) {
-     for (; '\0' != *str; str++) {
-        if (NULL == (root = root->nexts[*str - 'a'])) {
-            break;
-        }
+void result_append(char *word, struct BreakWords *rst) {
+    if (rst->size == 0) {
+        result_init(rst);
     }
-    /* 匹配到一个word */
-    return ('\0' == *str && root->fin);
+    if (rst->count == rst->size) {
+        rst->size *= 2;
+        rst->words = (char **)realloc(rst->words, sizeof(char *) * rst->size);
+    }
+    rst->words[rst->count++] = word;
 }
-/*------------------------ tire ---------------------------*/
 
-void print_stack(char **words, int size, int *stack, int top) {
-    int i = 0;
-    printf("[");
+void create_solution(const struct WordDict *dict, 
+        int stack[], int top, struct BreakWords *rst) {
+    int i, offset, size = 1;
+    char *word  = NULL;
+
+    /* 计算需要空间 */
     for (i = 0; i < top; i++) {
-        printf("%s ", words[stack[i]]);
+        size += dict->lens[stack[i]];
+        size += (i > 0 ? 1 : 0);
     }
-    printf("]\n");
+
+    /* 拼装成单词字符串 */
+    offset = 0;
+    word   = (char *)malloc(sizeof(char) * size);
+    for (i = 0; i < top; i++) {
+        if (i > 0) {
+            word[offset++] = ' ';
+        }
+        memcpy(word+offset, dict->words[stack[i]], dict->lens[stack[i]]);
+        offset += dict->lens[stack[i]];
+    }
+    word[offset] = '\0';
+
+    /* 放入结果集返回 */
+    result_append(word, rst);
 }
 
-void dfs(char *s, char **words, int size, 
-        int *lens, int *matches, struct TireNode *root,
-        int *stack, int top, struct RstHead *head) {
-    int i, n;
-    if ('\0' == *s) {
-        // print_stack(words, size, stack, top);
-        result_append(words, size, lens, stack, top, head);
-        return;
+int dfs(const char *str, const struct WordDict *dict, 
+        int stack[], int top, struct BreakWords *rst) {
+    int i;
+    if ('\0' == *str) {
+        create_solution(dict, stack, top, rst);
+        return 1;
     }
-    n = tire_match(root, s, matches);
-    for (i = n; i > 0; i--) {
-        stack[top] = matches[i-1];
-        dfs(s+lens[matches[i-1]], words, size, lens, matches+n, root, stack, top+1, head);
-    } 
+    for (i = 0; i < dict->count; i++) {
+        if (0 != strncmp(dict->words[i], str, dict->lens[i])) {
+            continue;
+        }
+        stack[top] = i;
+        dfs(str + dict->lens[i], dict, stack, top+1, rst);
+    }
+    return 0;
 }
+
 
 char ** 
 wordBreak(char * s, char ** wordDict, int wordDictSize, int* returnSize){
-    int i, len, *stack, *matches, *lens;
-    struct TireNode *root;
-
-    struct RstHead head = {NULL, 0, 0};
-
+    int len, *stack ;
+    struct WordDict   dict = {NULL, NULL, 0};
+    struct BreakWords rst  = {NULL, 0, 0};
     len     = strlen(s);
-    matches = (int *)calloc(len * wordDictSize, sizeof(int));
     stack   = (int *)calloc(len, sizeof(int));
-    lens    = (int *)calloc(wordDictSize, sizeof(int));
+    create_dict(&dict, wordDict, wordDictSize);
+    dfs(s, &dict, stack, 0, &rst);
 
-    /* 构建tire tree */
-    root = tire_create();
-    for (i = 0; i < wordDictSize; i++) {
-        tire_insert(root, wordDict[i]);
-        /* 兼职 */
-        lens[i] = strlen(wordDict[i]);
-    }
-
-    /* 开始干活 */
-    dfs(s, wordDict, wordDictSize, lens, matches, root, stack, 0, &head);
-
-    root = tire_free(root);
-    free(matches);
-    free(stack);
-    free(lens);
-
-    *returnSize = head.size;
-    return head.pp;
+    destroy_dict(&dict);
+    *returnSize = rst.count;
+    return rst.words;
 }
 
 
@@ -195,10 +123,8 @@ main(int argc, char *argv[]) {
         return -1;
     }
     pp =  wordBreak(argv[1], argv+2, argc-2, &size);
-    printf("[");
     for (i = 0; i < size; i++) {
-        printf("\n%s\n", pp[i]);
+        printf("[%s]\n", pp[i]);
     }
-    printf("]\n");
     return 0;
 }
