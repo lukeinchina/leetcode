@@ -2,44 +2,28 @@
 #include <stdlib.h>
 
 int nthUglyNumber(int n){
-    int i, x, y, z, val = 1;
-    x = y = z = 0;
-
-    for (i = 0; i < n; i++) {
-        if (0 == x && 0 == y && 0 == z) {
-            x += 1;
-        } else if (z > 0 && y > 0) {
-            x += 4;
-            y--;
-            z--;
-        } else if (z > 0 && x > 0) {
-            z--;
-            y++;
-            x++;
-        } else if (y > 0 && x > 0) {
-            x += 2;
-            y--;
-        } else if (z > 0) {
-            z--;
-            x++;
-            y++;
-        } else if (y > 0) {
-            x += 2;
-            y--;
-        } else if (x > 0) {
-            ;
+    int *dp = (int *)malloc(sizeof(int) * n );
+    int i, p2,p3,p5, nth, n2, n3, n5;
+    p2 = p3 = p5 = 0;
+    dp[0] = 1;
+    for (i = 1; i < n; i++) {
+        n2 = dp[p2] * 2;
+        n3 = dp[p3] * 3;
+        n5 = dp[p5] * 5;
+        nth = n2 < n3 ? n2 : n3;
+        dp[i] = nth = n5 < nth ? n5 : nth;
+        if (nth == n2) {
+            p2++;
+        }
+        if (nth == n3) {
+            p3++;
+        }
+        if (nth == n5) {
+            p5++;
         }
     }
-    for (i = 0; i < x; i++) {
-        val *= 2;
-    }
-    for (i = 0; i < y; i++) {
-        val *= 3;
-    }
-    for (i = 0; i < z; i++) {
-        val *= 5;
-    }
-    return val;
+    free(dp);
+    return nth;
 }
 
 int

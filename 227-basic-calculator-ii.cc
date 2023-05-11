@@ -1,9 +1,8 @@
 #include <stdio.h>
-#include <ctype.h>
 #include <stdlib.h>
-#include <vector>
-#include <string>
-using namespace std;
+#include <string.h>
+#include <ctype.h>
+#include <assert.h>
 
 #define calc_on_top(c) do {\
     if ((c) == '+') { \
@@ -19,10 +18,10 @@ using namespace std;
     ntop -= 1;\
 }while (0)
 
-long calc(const char * s) {
-    long  nums[16] = {0};
-    char ops[16];
-    long val, ntop = 0, otop = 0;
+int calculate(char * s){
+    int val;
+    int nums[16] = {0}, ops[16];
+    int ntop = 0, otop = 0;
     while ('\0' != *s) {
         if (isspace(*s)) {
             s++;
@@ -57,51 +56,12 @@ long calc(const char * s) {
     return nums[0];
 }
 
-inline void check_candidate(const char *expr, int target, vector<string> &dst) {
-    if (calc(expr) == target) {
-        dst.push_back(expr);
-        printf("%s -->(%ld)\n", expr, calc(expr));
-    }
-    return ;
-}
-
-void backtrack(const char *s, char *t, char *expr, int lead, int target, vector<string> &dst) {
-    int i;
-    static const char ops[] = {'+', '-', '*'};
-    if ('\0' == *s) {
-        *t = '\0';
-        return check_candidate(expr, target, dst);
-    } else if ('\0' == *(s+1)) {
-        *t = *s;
-        *(t+1) = '\0';
-        return check_candidate(expr, target, dst);
-    }
-    *t = *s;
-    for (i = 0; i < 3; i++) {
-        *(t+1) = ops[i];
-        backtrack(s+1, t+2, expr, 1, target, dst); 
-    }
-
-    if (lead && '0' == *s) {
-        return;
-    }
-    return backtrack(s+1, t+1, expr, 0, target, dst);
-}
-
-vector<string> addOperators(string num, int target) {
-    char expr[32];
-    vector<string> dst;
-    backtrack(num.c_str(), expr, expr, 1, target, dst);
-    return dst;
-}
-
 int
 main(int argc, char *argv[]) {
-    if (argc < 3) {
-        printf("usage:%s expr  n\n", argv[0]);
+    if (argc < 2) {
+        printf("usage:%s 'expr'\n", argv[0]);
         return -1;
     }
-    vector<string> results = addOperators(string(argv[1]), atoi(argv[2]));
-    
+    printf("%s = %d\n", argv[1], calculate(argv[1]));
     return 0;
 }

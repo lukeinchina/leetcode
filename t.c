@@ -38,11 +38,16 @@ void perm(int *nums, int size, int idx) {
     }
 }
 
+int slove(std::vector<int> &n, int h) {
+}
+
 int
 main(void) {
-    int nums[] = {-1,-1,2,1,1,2,2,2};
-    // int nums[] = {-1,-1,-1,1,1,2,2,2};
-    qsort(nums, 3, sizeof(int), compare);
-    perm(nums, 3, 0);
+    int nums[] = {5, 10, 20};
+    std::vector<int> n;
+    for (int i = 0; i < sizeof(nums) / sizeof(nums[0]); i++) {
+        n.append(nums[i]);
+    }
+    printf("speed:%d\n", slove(n, 4));
     return 0;
 }
